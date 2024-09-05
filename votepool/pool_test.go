@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/bls"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/prysmaticlabs/prysm/crypto/bls/blst"
-	blsCommon "github.com/prysmaticlabs/prysm/crypto/bls/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,14 +16,14 @@ import (
 	"github.com/cometbft/cometbft/types"
 )
 
-func makeVotePool() (blsCommon.SecretKey, *types.Validator, blsCommon.SecretKey, *types.Validator, *types.EventBus, *Pool) {
+func makeVotePool() (bls.PrivateKey, *types.Validator, bls.PrivateKey, *types.Validator, *types.EventBus, *Pool) {
 	pubKey1 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey1, _ := blst.RandKey()
+	blsPrivKey1, _ := bls.GenerateBlsKey()
 	blsPubKey1 := blsPrivKey1.PublicKey().Marshal()
 	val1 := &types.Validator{Address: pubKey1.Address(), PubKey: pubKey1, BlsKey: blsPubKey1, VotingPower: 10}
 
 	pubKey2 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey2, _ := blst.RandKey()
+	blsPrivKey2, _ := bls.GenerateBlsKey()
 	blsPubKey2 := blsPrivKey2.PublicKey().Marshal()
 	val2 := &types.Validator{Address: pubKey2.Address(), PubKey: pubKey2, BlsKey: blsPubKey2, VotingPower: 10}
 
@@ -48,9 +47,9 @@ func makeVotePool() (blsCommon.SecretKey, *types.Validator, blsCommon.SecretKey,
 	return blsPrivKey1, val1, blsPrivKey2, val2, eventBus, votePool
 }
 
-func makeValidVotes(secKey blsCommon.SecretKey, val1 *types.Validator) (Vote, Vote, Vote) {
+func makeValidVotes(secKey bls.PrivateKey, val1 *types.Validator) (Vote, Vote, Vote) {
 	eventHash1 := common.HexToHash("0xeefacfed87736ae1d8e8640f6fd7951862997782e5e79842557923e2779d5d5a").Bytes()
-	sign1 := secKey.Sign(eventHash1).Marshal()
+	sign1, _ := secKey.Sign(eventHash1, DST).Marshal()
 	vote1 := Vote{
 		PubKey:    val1.BlsKey,
 		Signature: sign1,
@@ -59,7 +58,7 @@ func makeValidVotes(secKey blsCommon.SecretKey, val1 *types.Validator) (Vote, Vo
 	}
 
 	eventHash2 := common.HexToHash("0x7e19be15d0d524a1ca5e39be503d18584c23426920bdc23b159c37a2341913d0").Bytes()
-	sign2 := secKey.Sign(eventHash2).Marshal()
+	sign2, _ := secKey.Sign(eventHash2, DST).Marshal()
 	vote2 := Vote{
 		PubKey:    val1.BlsKey,
 		Signature: sign2,
@@ -68,7 +67,7 @@ func makeValidVotes(secKey blsCommon.SecretKey, val1 *types.Validator) (Vote, Vo
 	}
 
 	eventHash3 := common.HexToHash("0xb941130c8d3508f642aba83db420f9cef6a6ebb7f869e3cef06f276bdcf205a9").Bytes()
-	sign3 := secKey.Sign(eventHash3).Marshal()
+	sign3, _ := secKey.Sign(eventHash3, DST).Marshal()
 	vote3 := Vote{
 		PubKey:    val1.BlsKey,
 		Signature: sign3,
@@ -82,14 +81,14 @@ func TestPool_AddVote(t *testing.T) {
 	pk1, val1, _, _, _, votePool := makeVotePool()
 
 	eventHash := common.HexToHash("0xeefacfed87736ae1d8e8640f6fd7951862997782e5e79842557923e2779d5d5a").Bytes()
-	secKey, _ := blst.SecretKeyFromBytes(pk1.Marshal())
-	sign := secKey.Sign(eventHash).Marshal()
+	secKey, _ := bls.UnmarshalPrivateKey(pk1.Marshal())
+	sign, _ := secKey.Sign(eventHash, DST).Marshal()
 
 	anotherEventHash := common.HexToHash("0x7e19be15d0d524a1ca5e39be503d18584c23426920bdc23b159c37a2341913d0").Bytes()
-	blsPrivKey, _ := blst.RandKey()
+	blsPrivKey, _ := bls.GenerateBlsKey()
 	blsPubKey := blsPrivKey.PublicKey().Marshal()
-	blsSecKey, _ := blst.SecretKeyFromBytes(blsPrivKey.Marshal())
-	anotherSign := blsSecKey.Sign(anotherEventHash).Marshal()
+	blsSecKey, _ := bls.UnmarshalPrivateKey(blsPrivKey.Marshal())
+	anotherSign, _ := blsSecKey.Sign(anotherEventHash, DST).Marshal()
 
 	testCases := []struct {
 		vote Vote
@@ -152,7 +151,7 @@ func TestPool_AddVote(t *testing.T) {
 
 func TestPool_QueryFlushVote(t *testing.T) {
 	pk1, val1, _, _, _, votePool := makeVotePool()
-	secKey, _ := blst.SecretKeyFromBytes(pk1.Marshal())
+	secKey, _ := bls.UnmarshalPrivateKey(pk1.Marshal())
 
 	vote1, vote2, vote3 := makeValidVotes(secKey, val1)
 
@@ -193,7 +192,7 @@ func TestPool_QueryFlushVote(t *testing.T) {
 
 func TestPool_PruneVote(t *testing.T) {
 	pk1, val1, _, _, _, votePool := makeVotePool()
-	secKey, _ := blst.SecretKeyFromBytes(pk1.Marshal())
+	secKey, _ := bls.UnmarshalPrivateKey(pk1.Marshal())
 
 	vote1, vote2, _ := makeValidVotes(secKey, val1)
 
@@ -215,7 +214,7 @@ func TestPool_PruneVote(t *testing.T) {
 
 func TestPool_SubscribeNewVoteEvent(t *testing.T) {
 	pk1, val1, _, _, eventBus, votePool := makeVotePool()
-	secKey, _ := blst.SecretKeyFromBytes(pk1.Marshal())
+	secKey, _ := bls.UnmarshalPrivateKey(pk1.Marshal())
 
 	vote1, _, _ := makeValidVotes(secKey, val1)
 
@@ -239,7 +238,7 @@ func TestPool_SubscribeNewVoteEvent(t *testing.T) {
 
 func TestPool_ValidatorSetUpdate(t *testing.T) {
 	pk1, val1, _, _, eventBus, votePool := makeVotePool()
-	secKey, _ := blst.SecretKeyFromBytes(pk1.Marshal())
+	secKey, _ := bls.UnmarshalPrivateKey(pk1.Marshal())
 
 	// remove validator 1
 	removeVal := types.Validator{PubKey: val1.PubKey, Address: val1.Address, VotingPower: 0}

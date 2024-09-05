@@ -54,7 +54,6 @@ require (
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
-	github.com/prysmaticlabs/prysm v0.0.0-20220124113610-e26cde5e091b
 	github.com/vektra/mockery/v2 v2.14.0
 	gonum.org/v1/gonum v0.8.2
 	google.golang.org/protobuf v1.31.0

@@ -10,11 +10,13 @@ const (
 	eventHashLen = 32
 
 	// Length of Vote public key
-	pubKeyLen = 48
+	pubKeyLen = 128
 
 	// Length of Vote signature
-	signatureLen = 96
+	signatureLen = 64
 )
+
+var DST = []byte("BLS_SIG_ZZZG1_XMD:SHA256-SSWU-RO-_NUL_")
 
 // Vote stands for votes from differently relayers/validators, to agree/disagree on something (e.g., cross chain).
 type Vote struct {

@@ -4,17 +4,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/bls"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/prysmaticlabs/prysm/crypto/bls/blst"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestVote_ValidateBasic(t *testing.T) {
-	privKey, _ := blst.RandKey()
+	privKey, _ := bls.GenerateBlsKey()
 	pubKey := privKey.PublicKey().Marshal()
 	eventHash := common.HexToHash("0xeefacfed87736ae1d8e8640f6fd7951862997782e5e79842557923e2779d5d5a").Bytes()
-	secKey, _ := blst.SecretKeyFromBytes(privKey.Marshal())
-	sign := secKey.Sign(eventHash).Marshal()
+	privKeyBts, _ := privKey.Marshal()
+	secKey, _ := bls.UnmarshalPrivateKey(privKeyBts)
+	sign, _ := secKey.Sign(eventHash, DST).Marshal()
 
 	testCases := []struct {
 		vote Vote

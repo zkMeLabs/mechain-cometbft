@@ -6,10 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/bls"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-kit/log/term"
-	"github.com/prysmaticlabs/prysm/crypto/bls/blst"
-	blsCommon "github.com/prysmaticlabs/prysm/crypto/bls/common"
 	"github.com/stretchr/testify/require"
 
 	cfg "github.com/cometbft/cometbft/config"
@@ -34,18 +33,18 @@ func votepoolLogger() log.Logger {
 	})
 }
 
-func makeAndConnectReactors(config *cfg.Config, n int) ([]blsCommon.SecretKey, []*types.Validator, []*types.EventBus, []VotePool, []*Reactor) {
+func makeAndConnectReactors(config *cfg.Config, n int) ([]bls.PrivateKey, []*types.Validator, []*types.EventBus, []VotePool, []*Reactor) {
 	pubKey1 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey1, _ := blst.RandKey()
+	blsPrivKey1, _ := bls.GenerateBlsKey()
 	blsPubKey1 := blsPrivKey1.PublicKey().Marshal()
 	val1 := &types.Validator{Address: pubKey1.Address(), PubKey: pubKey1, BlsKey: blsPubKey1, VotingPower: 10}
 
 	pubKey2 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey2, _ := blst.RandKey()
+	blsPrivKey2, _ := bls.GenerateBlsKey()
 	blsPubKey2 := blsPrivKey2.PublicKey().Marshal()
 	val2 := &types.Validator{Address: pubKey2.Address(), PubKey: pubKey2, BlsKey: blsPubKey2, VotingPower: 10}
 
-	pks := []blsCommon.SecretKey{
+	pks := []bls.PrivateKey{
 		blsPrivKey1, blsPrivKey2,
 	}
 
@@ -85,9 +84,9 @@ func TestReactorBroadcastVotes(t *testing.T) {
 	config := cfg.TestConfig()
 	pks, vals, _, pools, reactors := makeAndConnectReactors(config, 2)
 
-	secKey, _ := blst.SecretKeyFromBytes(pks[0].Marshal())
+	secKey, _ := bls.UnmarshalPrivateKey(pks[0].Marshal())
 	eventHash1 := common.HexToHash("0xeefacfed87736ae1d8e8640f6fd7951862997782e5e79842557923e2779d5d5a").Bytes()
-	sign1 := secKey.Sign(eventHash1).Marshal()
+	sign1, _ := secKey.Sign(eventHash1, DST).Marshal()
 	vote1 := Vote{
 		PubKey:    vals[0].BlsKey,
 		Signature: sign1,
@@ -100,7 +99,7 @@ func TestReactorBroadcastVotes(t *testing.T) {
 	waitVotesReceived(t, reactors, eventHash1)
 
 	eventHash2 := common.HexToHash("0x7e19be15d0d524a1ca5e39be503d18584c23426920bdc23b159c37a2341913d0").Bytes()
-	sign2 := secKey.Sign(eventHash2).Marshal()
+	sign2, _ := secKey.Sign(eventHash2, DST).Marshal()
 	vote2 := Vote{
 		PubKey:    vals[0].BlsKey,
 		Signature: sign2,

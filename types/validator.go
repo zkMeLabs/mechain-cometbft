@@ -14,7 +14,7 @@ import (
 
 const (
 	// BlsPubKeySize is the size of validator's relayer bls public key.
-	BlsPubKeySize = 48
+	BlsPubKeySize = 128
 
 	// AddressSize is the size of validator's relayer address.
 	AddressSize = 20

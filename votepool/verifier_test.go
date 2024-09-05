@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/bls"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/prysmaticlabs/prysm/crypto/bls/blst"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cometbft/cometbft/crypto/ed25519"
@@ -14,12 +14,12 @@ import (
 
 func TestVoteFromValidatorVerifier(t *testing.T) {
 	pubKey1 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey1, _ := blst.RandKey()
+	blsPrivKey1, _ := bls.GenerateBlsKey()
 	blsPubKey1 := blsPrivKey1.PublicKey().Marshal()
 	val1 := &types.Validator{Address: pubKey1.Address(), PubKey: pubKey1, BlsKey: blsPubKey1, VotingPower: 10}
 
 	pubKey2 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey2, _ := blst.RandKey()
+	blsPrivKey2, _ := bls.GenerateBlsKey()
 	blsPubKey2 := blsPrivKey2.PublicKey().Marshal()
 	val2 := &types.Validator{Address: pubKey2.Address(), PubKey: pubKey2, BlsKey: blsPubKey2, VotingPower: 10}
 
@@ -34,7 +34,7 @@ func TestVoteFromValidatorVerifier(t *testing.T) {
 	err := verifier.Validate(&voteFromVal1)
 	require.NoError(t, err)
 
-	blsPrivKey, _ := blst.RandKey()
+	blsPrivKey, _ := bls.GenerateBlsKey()
 	blsPubKey := blsPrivKey.PublicKey().Marshal()
 	voteFromOthers := Vote{PubKey: blsPubKey}
 	err = verifier.Validate(&voteFromOthers)
@@ -43,12 +43,12 @@ func TestVoteFromValidatorVerifier(t *testing.T) {
 
 func TestVoteFromValidatorVerifier_UpdateValidators(t *testing.T) {
 	pubKey1 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey1, _ := blst.RandKey()
+	blsPrivKey1, _ := bls.GenerateBlsKey()
 	blsPubKey1 := blsPrivKey1.PublicKey().Marshal()
 	val1 := &types.Validator{Address: pubKey1.Address(), PubKey: pubKey1, BlsKey: blsPubKey1, VotingPower: 10}
 
 	pubKey2 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey2, _ := blst.RandKey()
+	blsPrivKey2, _ := bls.GenerateBlsKey()
 	blsPubKey2 := blsPrivKey2.PublicKey().Marshal()
 	val2 := &types.Validator{Address: pubKey2.Address(), PubKey: pubKey2, BlsKey: blsPubKey2, VotingPower: 10}
 
@@ -67,7 +67,7 @@ func TestVoteFromValidatorVerifier_UpdateValidators(t *testing.T) {
 
 	//add validator
 	pubKey3 := ed25519.GenPrivKey().PubKey()
-	blsPrivKey3, _ := blst.RandKey()
+	blsPrivKey3, _ := bls.GenerateBlsKey()
 	blsPubKey3 := blsPrivKey3.PublicKey().Marshal()
 
 	addVal := &types.Validator{PubKey: pubKey3, Address: pubKey3.Address(), BlsKey: blsPubKey3, VotingPower: 10}
@@ -77,11 +77,12 @@ func TestVoteFromValidatorVerifier_UpdateValidators(t *testing.T) {
 }
 
 func TestVoteBlsVerifier(t *testing.T) {
-	privKey, _ := blst.RandKey()
+	privKey, _ := bls.GenerateBlsKey()
 	pubKey := privKey.PublicKey().Marshal()
 	eventHash := common.HexToHash("0xeefacfed87736ae1d8e8640f6fd7951862997782e5e79842557923e2779d5d5a").Bytes()
-	secKey, _ := blst.SecretKeyFromBytes(privKey.Marshal())
-	sign := secKey.Sign(eventHash).Marshal()
+	privKeyBts, _ := privKey.Marshal()
+	secKey, _ := bls.UnmarshalPrivateKey(privKeyBts)
+	sign, _ := secKey.Sign(eventHash, DST).Marshal()
 
 	verifier := &BlsSignatureVerifier{}
 
