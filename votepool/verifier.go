@@ -3,7 +3,7 @@ package votepool
 import (
 	"errors"
 
-	"github.com/prysmaticlabs/prysm/crypto/bls/blst"
+	"github.com/0xPolygon/polygon-edge/bls"
 
 	"github.com/cometbft/cometbft/libs/sync"
 	"github.com/cometbft/cometbft/types"
@@ -86,13 +86,13 @@ func (b *BlsSignatureVerifier) Validate(vote *Vote) error {
 }
 
 func verifySignature(msg []byte, pubKey, sig []byte) bool {
-	blsPubKey, err := blst.PublicKeyFromBytes(pubKey)
+	blsPubKey, err := bls.UnmarshalPublicKey(pubKey)
 	if err != nil {
 		return false
 	}
-	signature, err := blst.SignatureFromBytes(sig)
+	signature, err := bls.UnmarshalSignature(sig)
 	if err != nil {
 		return false
 	}
-	return signature.Verify(blsPubKey, msg)
+	return signature.Verify(blsPubKey, msg, DST)
 }

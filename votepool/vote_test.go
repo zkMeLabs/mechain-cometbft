@@ -4,17 +4,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/bls"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/prysmaticlabs/prysm/crypto/bls/blst"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestVote_ValidateBasic(t *testing.T) {
-	privKey, _ := blst.RandKey()
+	privKey, _ := bls.GenerateBlsKey()
 	pubKey := privKey.PublicKey().Marshal()
 	eventHash := common.HexToHash("0xeefacfed87736ae1d8e8640f6fd7951862997782e5e79842557923e2779d5d5a").Bytes()
-	secKey, _ := blst.SecretKeyFromBytes(privKey.Marshal())
-	sign := secKey.Sign(eventHash).Marshal()
+	privKeyBts, _ := privKey.Marshal()
+	secKey, _ := bls.UnmarshalPrivateKey(privKeyBts)
+	sign, _ := secKey.Sign(eventHash, DST)
+	signBts, _ := sign.Marshal()
 
 	testCases := []struct {
 		vote Vote
@@ -24,7 +26,7 @@ func TestVote_ValidateBasic(t *testing.T) {
 		{
 			vote: Vote{
 				PubKey:    pubKey,
-				Signature: sign,
+				Signature: signBts,
 				EventType: FromBscCrossChainEvent,
 				EventHash: eventHash,
 				expireAt:  time.Time{},
@@ -35,7 +37,7 @@ func TestVote_ValidateBasic(t *testing.T) {
 		{
 			vote: Vote{
 				PubKey:    pubKey,
-				Signature: sign,
+				Signature: signBts,
 				EventType: 10,
 				EventHash: eventHash,
 				expireAt:  time.Time{},
@@ -46,7 +48,7 @@ func TestVote_ValidateBasic(t *testing.T) {
 		{
 			vote: Vote{
 				PubKey:    pubKey,
-				Signature: sign,
+				Signature: signBts,
 				EventType: FromBscCrossChainEvent,
 				EventHash: eventHash[0:12],
 				expireAt:  time.Time{},
@@ -57,7 +59,7 @@ func TestVote_ValidateBasic(t *testing.T) {
 		{
 			vote: Vote{
 				PubKey:    pubKey[0:10],
-				Signature: sign,
+				Signature: signBts,
 				EventType: FromBscCrossChainEvent,
 				EventHash: eventHash,
 				expireAt:  time.Time{},
@@ -68,7 +70,7 @@ func TestVote_ValidateBasic(t *testing.T) {
 		{
 			vote: Vote{
 				PubKey:    pubKey,
-				Signature: sign[0:48],
+				Signature: signBts[0:48],
 				EventType: FromBscCrossChainEvent,
 				EventHash: eventHash,
 				expireAt:  time.Time{},

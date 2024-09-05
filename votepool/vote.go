@@ -3,6 +3,8 @@ package votepool
 import (
 	"errors"
 	"time"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -10,11 +12,13 @@ const (
 	eventHashLen = 32
 
 	// Length of Vote public key
-	pubKeyLen = 48
+	pubKeyLen = 128
 
 	// Length of Vote signature
-	signatureLen = 96
+	signatureLen = 64
 )
+
+var DST = crypto.Keccak256([]byte("BLS_SIG_BN254G1_XMD:SHA-256_SVDW_RO_NUL_"))
 
 // Vote stands for votes from differently relayers/validators, to agree/disagree on something (e.g., cross chain).
 type Vote struct {
