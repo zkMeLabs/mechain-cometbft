@@ -312,7 +312,7 @@ require (
 )
 
 replace (
-	github.com/0xPolygon/polygon-edge v1.3.3 => github.com/zkMeLabs/polygon-edge v0.0.0-20240909101200-6bec9fa64975
+	github.com/0xPolygon/polygon-edge v1.3.3 => github.com/zkMeLabs/polygon-edge v1.3.3-mechain.1
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/btcsuite/btcd/btcutil => github.com/btcsuite/btcd/btcutil v1.1.2
